@@ -1,16 +1,20 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
 
-// ✅ Import Leaflet CSS for maps (required)
-import 'leaflet/dist/leaflet.css'
+// Leaflet CSS (required for map styling)
+import "leaflet/dist/leaflet.css";
 
-// ✅ Import Tailwind + your custom styles
-import './index.css'
+// Vite + Leaflet fix (side-effect file)
+import "./leafletFix";
 
-import App from './App.tsx'
+// App styles (Tailwind + custom)
+import "./index.css";
 
-createRoot(document.getElementById('root')!).render(
+// App entry
+import App from "./App";
+
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
-  </StrictMode>,
-)
+  </StrictMode>
+);

@@ -1,22 +1,27 @@
-/* Tailwind core */
+/* src/index.css */
+
+/* Tailwind core (required) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Your custom base styles — placed inside Tailwind's base layer */
+/* Application base styles placed inside Tailwind's base layer */
 @layer base {
   :root {
+    --app-bg: #ffffff;
+    --app-ink: #0f172a;
+    --muted: #6b7280;
+    --content-max-width: 1100px;
     font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
     line-height: 1.5;
-    font-weight: 400;
+  }
 
-    color-scheme: light dark;
-    /* note: keep colors here if you want a dark default */
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
-
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
+  /* light default — prefers-color-scheme will override in supported browsers */
+  html, body {
+    height: 100%;
+    margin: 0;
+    background-color: var(--app-bg);
+    color: var(--app-ink);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -26,23 +31,9 @@
     color: #646cff;
     text-decoration: inherit;
   }
-  a:hover {
-    color: #535bf2;
-  }
+  a:hover { color: #535bf2; }
 
-  body {
-    margin: 0;
-    display: flex;
-    place-items: center;
-    min-width: 320px;
-    min-height: 100vh;
-    /* If using Tailwind utility classes for layout you can remove the above later */
-  }
-
-  h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
-  }
+  h1 { font-size: 3.2em; line-height: 1.1; }
 
   button {
     border-radius: 8px;
@@ -55,24 +46,34 @@
     cursor: pointer;
     transition: border-color 0.25s;
   }
-  button:hover {
-    border-color: #646cff;
-  }
-  button:focus,
-  button:focus-visible {
+  button:hover { border-color: #646cff; }
+  button:focus, button:focus-visible {
     outline: 4px auto -webkit-focus-ring-color;
   }
 
-  @media (prefers-color-scheme: light) {
-    :root {
-      color: #213547;
-      background-color: #ffffff;
-    }
-    a:hover {
-      color: #747bff;
-    }
-    button {
-      background-color: #f9f9f9;
-    }
+  /* Do not force body layout here (no display:flex on body) — use container wrappers in components/pages */
+  /* Helper container you can use around main content: */
+  .app-container {
+    max-width: var(--content-max-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
+
+  footer {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+}
+
+/* Respect user color scheme (optional) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-bg: #0b1220;
+    --app-ink: #e6eef8;
+    --muted: #9aa4b2;
+  }
+
+  button { background-color: #111827; color: #fff; }
 }
