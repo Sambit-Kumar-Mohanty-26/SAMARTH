@@ -1,13 +1,17 @@
 // src/pages/DashboardPage.tsx
 import React, { useMemo, useState } from "react";
-import { useDistrictsRealtime } from "../hooks/useFirestoreData";
+import { useFirestoreData } from "../hooks/useFirestoreData";
 import DistrictLeaderboard from "../components/DistrictLeaderboard";
 import InteractiveMap from "../components/InteractiveMap";
+import SPView from "../components/SPView";
+import AIInsights from "../components/AIInsights";
+import FeedbackForm from "../components/FeedbackForm";
 import type { District } from "../types";
 
 export default function DashboardPage() {
-  const { districts, loading, error } = useDistrictsRealtime();
+  const { districts, officers, summary, aiInsights, loading, error } = useFirestoreData();
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "feedback">("dashboard");
 
   // derived values
   const totalDistricts = districts.length;
@@ -30,98 +34,122 @@ export default function DashboardPage() {
   }, [selectedDistrict, districts]);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
-      {/* Single page title only */}
-      <h1 className="text-4xl md:text-5xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-8">
-        SAMARTH Dashboard
-      </h1>
-
-      {error && <div className="mb-4 text-red-600">Error loading data: {error}</div>}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left / main column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Interactive Map */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <h2 className="text-xl font-semibold mb-2">Interactive Map</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Map shows district colors by HPS. Click a district to open SP View.
-            </p>
-
-            <div className="w-full h-[560px] rounded-lg overflow-hidden shadow-sm">
-              <InteractiveMap
-                districts={districts}
-                onDistrictClick={(name) => setSelectedDistrict(name)}
-              />
-            </div>
-          </section>
-
-          {/* KPI summary */}
-          <section className="grid grid-cols-2 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow text-center">
-              <div className="text-sm text-gray-500 mb-2">Total districts</div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalDistricts}</div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow text-center">
-              <div className="text-sm text-gray-500 mb-2">Avg HPS</div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{avgHps.toFixed(1)}</div>
-            </div>
-          </section>
-        </div>
-
-        {/* Right column (leaderboard) */}
-        <aside className="w-full">
-          <div className="sticky top-6">
-            {loading ? (
-              <div className="p-4 bg-white dark:bg-gray-800 rounded shadow">Loading districts...</div>
-            ) : (
-              <DistrictLeaderboard districts={districts} />
-            )}
-          </div>
-        </aside>
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Tab Navigation */}
+      <div className="flex gap-4 border-b border-gray-300 dark:border-gray-700">
+        <button
+          onClick={() => setActiveTab("dashboard")}
+          className={`px-4 py-2 font-semibold transition-colors ${
+            activeTab === "dashboard"
+              ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+          }`}
+        >
+          Dashboard
+        </button>
+        <button
+          onClick={() => setActiveTab("feedback")}
+          className={`px-4 py-2 font-semibold transition-colors ${
+            activeTab === "feedback"
+              ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+          }`}
+        >
+          Public Feedback
+        </button>
       </div>
 
-      {/* SP View (drilldown) */}
-      {selectedDistrict && (
-        <section className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold mb-2">SP View — {selectedDistrict}</h2>
-            <button
-              onClick={() => setSelectedDistrict(null)}
-              className="text-sm px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-md"
-            >
-              Close
-            </button>
-          </div>
+      {activeTab === "dashboard" ? (
+        <>
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+              Error loading data: {error}
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div className="p-4 border rounded">
-              <div className="text-sm text-gray-500">District</div>
-              <div className="font-bold">{selectedDistrictObj?.district_name ?? selectedDistrict}</div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            {/* Left / main column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* AI Insights */}
+              <AIInsights aiInsights={aiInsights} loading={loading} />
+
+              {/* Interactive Map */}
+              <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Interactive Map</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  Map shows district colors by HPS. Click a district to open SP View.
+                </p>
+
+                <div className="w-full h-[560px] rounded-lg overflow-hidden shadow-sm">
+                  <InteractiveMap
+                    districts={districts}
+                    onDistrictClick={(name) => setSelectedDistrict(name)}
+                  />
+                </div>
+              </section>
+
+              {/* KPI summary */}
+              <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow text-center">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Districts</div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalDistricts}</div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow text-center">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Avg HPS</div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{avgHps.toFixed(1)}</div>
+                </div>
+
+                {summary && (
+                  <>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow text-center">
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Officers</div>
+                      <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        {summary.total_officers}
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow text-center">
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Cases Solved</div>
+                      <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        {summary.total_cases_solved}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </section>
             </div>
 
-            <div className="p-4 border rounded">
-              <div className="text-sm text-gray-500">HPS</div>
-              <div className="font-bold">{(selectedDistrictObj?.hps_score ?? 0).toFixed(1)}</div>
-            </div>
-
-            <div className="p-4 border rounded">
-              <div className="text-sm text-gray-500">Officers</div>
-              <div className="font-bold">{selectedDistrictObj?.officer_count ?? "—"}</div>
-            </div>
+            {/* Right column (leaderboard) */}
+            <aside className="w-full">
+              <div className="sticky top-6">
+                {loading ? (
+                  <div className="p-4 bg-white dark:bg-gray-800 rounded shadow text-gray-500 dark:text-gray-400">
+                    Loading districts...
+                  </div>
+                ) : (
+                  <DistrictLeaderboard districts={districts} />
+                )}
+              </div>
+            </aside>
           </div>
 
-          <div className="mt-6">
-            <p className="text-sm text-gray-500">
-              Drill-down charts, officer list and recognition history for the selected district will appear here.
-            </p>
-            {/* TODO: embed charts / officer list components */}
-          </div>
-        </section>
+          {/* SP View (drilldown) */}
+          {selectedDistrict && selectedDistrictObj && (
+            <section className="mt-6">
+              <SPView
+                district={selectedDistrictObj}
+                officers={officers}
+                onClose={() => setSelectedDistrict(null)}
+              />
+            </section>
+          )}
+        </>
+      ) : (
+        <div className="max-w-3xl mx-auto">
+          <FeedbackForm />
+        </div>
       )}
-
-      
     </div>
   );
 }
