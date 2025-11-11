@@ -1,0 +1,29 @@
+{
+  "predictiveAlert": "District 'Cuttack' shows declining HPS trend. Recommend immediate review of officer performance metrics.",
+  "keyTopics": [
+    "Officer Performance",
+    "Case Resolution Rate",
+    "Public Satisfaction",
+    "Resource Allocation",
+    "Training Programs"
+  ],
+  "recommendations": [
+    "Increase training sessions for officers in low-performing districts",
+    "Review case allocation to balance workload",
+    "Implement mentorship programs for junior officers",
+    "Enhance public engagement initiatives"
+  ],
+  "risk_districts": [
+    "Cuttack",
+    "Balasore",
+    "Koraput"
+  ],
+  "top_performers": [
+    "Bhubaneswar",
+    "Puri",
+    "Rourkela",
+    "Sambalpur"
+  ],
+  "generated_at": "2025-11-11T18:00:00.000Z"
+}
+
