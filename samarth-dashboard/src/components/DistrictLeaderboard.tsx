@@ -1,5 +1,4 @@
 // src/components/DistrictLeaderboard.tsx
-import React from "react";
 import type { District } from "../types";
 
 type Props = {

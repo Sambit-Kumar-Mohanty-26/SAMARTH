@@ -1,5 +1,5 @@
 // src/components/InteractiveMap.tsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import type { District } from "../types";
 
