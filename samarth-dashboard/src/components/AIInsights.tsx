@@ -1,5 +1,4 @@
 // src/components/AIInsights.tsx
-import React from "react";
 import { Brain, AlertTriangle, TrendingUp, Award, Target } from "lucide-react";
 import type { AIInsights as AIInsightsType } from "../types";
 

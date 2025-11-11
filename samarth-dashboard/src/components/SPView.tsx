@@ -1,5 +1,5 @@
 // src/components/SPView.tsx
-import React, { useRef, useMemo } from "react";
+import { useRef, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
 import { Trophy, Award, Download, Star } from "lucide-react";
 import html2canvas from "html2canvas";
@@ -207,10 +207,14 @@ export default function SPView({ district, officers, onClose }: Props) {
                         {officer.name}
                       </h4>
                       {hasBadge && (
-                        <Award className="w-5 h-5 text-yellow-500" title="High Performer Badge" />
+                        <span title="High Performer Badge">
+                          <Award className="w-5 h-5 text-yellow-500" />
+                        </span>
                       )}
                       {isTopPerformer && (
-                        <Trophy className="w-5 h-5 text-blue-500" title="Top Performer" />
+                        <span title="Top Performer">
+                          <Trophy className="w-5 h-5 text-blue-500" />
+                        </span>
                       )}
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{officer.rank}</p>

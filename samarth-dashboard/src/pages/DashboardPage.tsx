@@ -1,5 +1,5 @@
 // src/pages/DashboardPage.tsx
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useFirestoreData } from "../hooks/useFirestoreData";
 import DistrictLeaderboard from "../components/DistrictLeaderboard";
 import InteractiveMap from "../components/InteractiveMap";
