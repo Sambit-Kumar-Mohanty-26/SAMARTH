@@ -9,6 +9,8 @@ import {
 import { db } from "../firebaseConfig";
 import type { District, Officer, Summary, AIInsights } from "../types";
 
+// --- NO CHANGES ARE NEEDED FOR THESE FIRST TWO HOOKS ---
+// They are included here to make this a complete file replacement.
 export function useDistrictsRealtime() {
   const [districts, setDistricts] = useState<District[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,6 +105,8 @@ export function useOfficersRealtime() {
   return { officers, loading, error };
 }
 
+// --- 👇 THIS IS WHERE THE IMPORTANT CHANGES AND FIXES ARE 👇 ---
+
 export function useSummaryRealtime() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,12 +121,12 @@ export function useSummaryRealtime() {
         (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
+            // This object now correctly matches the new `Summary` interface
             setSummary({
-              total_districts: data.total_districts ?? 0,
-              total_officers: data.total_officers ?? 0,
-              avg_hps_score: data.avg_hps_score ?? 0,
-              total_cases_solved: data.total_cases_solved ?? 0,
-              total_recognitions: data.total_recognitions ?? 0,
+              statewideConvictionRatio: data.statewideConvictionRatio ?? 0,
+              totalDrugSeizureVolume_kg: data.totalDrugSeizureVolume_kg ?? 0,
+              totalNbwsExecuted: data.totalNbwsExecuted ?? 0,
+              totalValueRecovered_INR: data.totalValueRecovered_INR ?? 0,
               last_updated: data.last_updated,
             } as Summary);
           } else {
@@ -138,7 +142,7 @@ export function useSummaryRealtime() {
       );
 
       return () => unsub();
-    } catch (err: any) {
+    } catch (err: any) { 
       setError(err?.message ?? "Error");
       setLoading(false);
     }
@@ -161,11 +165,13 @@ export function useAIInsightsRealtime() {
         (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
+            // This object now correctly matches the new `AIInsights` interface
             setAIInsights({
               id: docSnap.id,
+              naturalLanguageSummary: data.naturalLanguageSummary,
               predictiveAlert: data.predictiveAlert,
               keyTopics: data.keyTopics ?? [],
-              recommendations: data.recommendations ?? [],
+              underperformingDistrictFocus: data.underperformingDistrictFocus,
               risk_districts: data.risk_districts ?? [],
               top_performers: data.top_performers ?? [],
               generated_at: data.generated_at,
@@ -192,7 +198,8 @@ export function useAIInsightsRealtime() {
   return { aiInsights, loading, error };
 }
 
-// Combined hook that fetches all data
+
+// --- NO CHANGES NEEDED FOR THE COMBINED HOOK ---
 export function useFirestoreData() {
   const districts = useDistrictsRealtime();
   const officers = useOfficersRealtime();

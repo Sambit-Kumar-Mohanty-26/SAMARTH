@@ -1,9 +1,7 @@
 {
-  "total_districts": 30,
-  "total_officers": 1250,
-  "avg_hps_score": 65.5,
-  "total_cases_solved": 15420,
-  "total_recognitions": 342,
-  "last_updated": "2025-11-11T18:00:00.000Z"
+  "statewideConvictionRatio": 82.5,
+  "totalDrugSeizureVolume_kg": 154,
+  "totalNbwsExecuted": 5420,
+  "totalValueRecovered_INR": 7500000,
+  "last_updated": "2025-11-14T18:00:00.000Z"
 }
-

@@ -1,29 +1,23 @@
 {
-  "predictiveAlert": "District 'Cuttack' shows declining HPS trend. Recommend immediate review of officer performance metrics.",
+  "naturalLanguageSummary": "This month, Ganjam led in narcotics enforcement with 18 arrests, while Bhubaneswar showed the highest NBW execution rate.",
+  "predictiveAlert": "A potential surge in illegal sand mining activities is predicted for the coastal areas of the Bhadrak district. Recommend increasing patrols.",
   "keyTopics": [
-    "Officer Performance",
-    "Case Resolution Rate",
-    "Public Satisfaction",
-    "Resource Allocation",
-    "Training Programs"
+    "Narcotics Enforcement",
+    "NBW Execution Rate",
+    "Conviction Ratio",
+    "Illegal Sand Mining",
+    "Drug Seizure"
   ],
-  "recommendations": [
-    "Increase training sessions for officers in low-performing districts",
-    "Review case allocation to balance workload",
-    "Implement mentorship programs for junior officers",
-    "Enhance public engagement initiatives"
-  ],
+  "underperformingDistrictFocus": "Cuttack",
   "risk_districts": [
-    "Cuttack",
+    "Bhadrak",
     "Balasore",
-    "Koraput"
+    "Keonjhar"
   ],
   "top_performers": [
+    "Ganjam",
     "Bhubaneswar",
-    "Puri",
-    "Rourkela",
-    "Sambalpur"
+    "Puri"
   ],
-  "generated_at": "2025-11-11T18:00:00.000Z"
+  "generated_at": "2025-11-14T18:00:00.000Z"
 }
-
