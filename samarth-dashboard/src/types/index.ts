@@ -1,4 +1,3 @@
-
 export interface District {
   id: string;
   district_name: string;
@@ -50,4 +49,13 @@ export interface Feedback {
   rating?: number; 
   submitted_at: string;
   status?: 'pending' | 'reviewed' | 'resolved';
+}
+
+// --- ADDED FOR TREND ANALYSIS ---
+export interface HistoricalDataPoint {
+  id: string; // e.g., "2024-10"
+  month: string; // e.g., "Oct"
+  convictionRatio: number;
+  nbwsExecuted: number;
+  drugSeizure_kg: number;
 }
