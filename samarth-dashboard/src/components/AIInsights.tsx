@@ -20,6 +20,15 @@ export default function AIInsights({ aiInsights, loading }: Props) {
             <div className="flex gap-2">
               <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
               <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
+            </div>
+          </div>
+           <div className="space-y-3">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+            <div className="flex gap-2">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
             </div>
           </div>
         </div>
@@ -61,7 +70,7 @@ export default function AIInsights({ aiInsights, loading }: Props) {
         </div>
       )}
 
-      {/* Key Topics (FIXED) */}
+      {/* Key Topics */}
       {aiInsights.keyTopics && aiInsights.keyTopics.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
@@ -78,7 +87,7 @@ export default function AIInsights({ aiInsights, loading }: Props) {
         </div>
       )}
 
-      {/* Districts Requiring Attention (FIXED) */}
+      {/* Districts Requiring Attention (Corrected Formatting) */}
       {aiInsights.risk_districts && aiInsights.risk_districts.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
@@ -95,7 +104,7 @@ export default function AIInsights({ aiInsights, loading }: Props) {
         </div>
       )}
 
-      {/* Top Performing Districts (FIXED) */}
+      {/* Top Performing Districts (Corrected Formatting) */}
       {aiInsights.top_performers && aiInsights.top_performers.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">

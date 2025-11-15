@@ -1,24 +1,25 @@
 // src/pages/DashboardPage.tsx
 import { useMemo, useState } from "react";
-import { Download } from "lucide-react"; // <-- Real import
+import { Download, Upload } from "lucide-react"; // Added Upload icon
 import { useFirestoreData } from "../hooks/useFirestoreData";
-import { useHistoricalData } from "../hooks/useHistoricalData"; // <-- Real import
-import { exportToPdf, exportToExcel } from "../services/ReportService"; // <-- Real import
+import { useHistoricalData } from "../hooks/useHistoricalData";
+import { exportToPdf, exportToExcel } from "../services/ReportService";
 import DistrictLeaderboard from "../components/DistrictLeaderboard";
 import InteractiveMap from "../components/InteractiveMap";
 import SPView from "../components/SPView";
 import AIInsights from "../components/AIInsights";
 import FeedbackForm from "../components/FeedbackForm";
 import ZoneHpsPie from "../components/ZoneHpsPie";
+import ReportUploader from "../components/ReportUploader"; // Import the new component
 import TopDistrictsBar from "../components/TopDistrictsBar";
-import MonthlyTrendChart from "../components/MonthlyTrendChart"; // <-- Real import
+import MonthlyTrendChart from "../components/MonthlyTrendChart";
 import type { District } from "../types";
 
 export default function DashboardPage() {
   const { districts, officers, summary, aiInsights, loading, error } = useFirestoreData();
   const { historicalData, loading: historyLoading } = useHistoricalData();
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "feedback">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "feedback" | "upload">("dashboard"); // Renamed 'admin' to 'upload'
 
   const selectedDistrictObj: District | null = useMemo(() => {
     if (!selectedDistrict) return null;
@@ -41,6 +42,10 @@ export default function DashboardPage() {
         <div className="flex gap-4">
           <button onClick={() => setActiveTab("dashboard")} className={`px-4 py-2 font-semibold transition-colors ${activeTab === "dashboard" ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"}`}>Dashboard</button>
           <button onClick={() => setActiveTab("feedback")} className={`px-4 py-2 font-semibold transition-colors ${activeTab === "feedback" ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"}`}>Public Feedback</button>
+          <button onClick={() => setActiveTab("upload")} className={`flex items-center gap-2 px-4 py-2 font-semibold transition-colors ${activeTab === "upload" ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"}`}>
+            <Upload size={16}/>
+            <span>Upload File</span>
+          </button>
         </div>
         
         {/* Export Buttons */}
@@ -64,7 +69,8 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {activeTab === "dashboard" ? (
+      {/* Show Dashboard content when 'dashboard' tab is active */}
+      {activeTab === "dashboard" && (
         <>
           {error && <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border rounded-lg text-red-700 dark:text-red-300">Error: {error}</div>}
 
@@ -109,7 +115,19 @@ export default function DashboardPage() {
           {/* SP View Modal (Drill Down) */}
           {selectedDistrict && selectedDistrictObj && <section className="mt-6"><SPView district={selectedDistrictObj} officers={officers} onClose={() => setSelectedDistrict(null)} /></section>}
         </>
-      ) : (<div className="max-w-3xl mx-auto"><FeedbackForm /></div>)}
+      )}
+
+      {/* Show Feedback Form when 'feedback' tab is active */}
+      {activeTab === "feedback" && (
+        <div className="max-w-3xl mx-auto"><FeedbackForm /></div>
+      )}
+
+      {/* Show Report Uploader when 'upload' tab is active */}
+      {activeTab === "upload" && (
+        <section className="pt-8">
+          <ReportUploader />
+        </section>
+      )}
     </div>
   );
 }

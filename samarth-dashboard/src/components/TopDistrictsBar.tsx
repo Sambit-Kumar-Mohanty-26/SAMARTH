@@ -1,5 +1,5 @@
 // src/components/TopDistrictsBar.tsx
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import {
   ResponsiveContainer,
   BarChart,

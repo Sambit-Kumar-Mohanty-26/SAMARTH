@@ -1,4 +1,3 @@
-import { Buffer } from 'buffer';
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import ExcelJS from "exceljs"; // <-- Import new library
@@ -46,7 +45,7 @@ export const exportToPdf = (
   doc.addPage();
   doc.setFontSize(14);
   doc.text("District Leaderboard", 14, 20);
-  const sortedDistricts = [...districts].sort((a, b) => (b.hps_score ?? 0) - (b.hps_score ?? 0));
+  const sortedDistricts = [...districts].sort((a, b) => (b.hps_score ?? 0) - (a.hps_score ?? 0));
   const tableColumn = ["Rank", "District", "HPS Score", "Officers", "Recognitions", "Zone"];
   const tableRows = sortedDistricts.map((d, i) => [
     i + 1, d.district_name || "N/A", d.hps_score?.toFixed(1) || "0.0",
@@ -108,7 +107,7 @@ export const exportToExcel = async (
   // Make header row bold
   sheetLb.getRow(1).font = boldFont;
 
-  const sortedDistricts = [...districts].sort((a, b) => (b.hps_score ?? 0) - (b.hps_score ?? 0));
+  const sortedDistricts = [...districts].sort((a, b) => (b.hps_score ?? 0) - (a.hps_score ?? 0));
   sortedDistricts.forEach((d, i) => {
     sheetLb.addRow({
       rank: i + 1,
