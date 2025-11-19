@@ -1,3 +1,52 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Define the custom Police Blue palette directly in CSS for v4 */
+  --color-police-50: #f0f9ff;
+  --color-police-100: #e0f2fe;
+  --color-police-200: #bae6fd;
+  --color-police-300: #7dd3fc;
+  --color-police-400: #38bdf8;
+  --color-police-500: #0ea5e9; /* Primary Brand */
+  --color-police-600: #0284c7;
+  --color-police-700: #0369a1;
+  --color-police-800: #075985;
+  --color-police-900: #0c4a6e; /* Deep Navy */
+  --color-police-950: #082f49;
+
+  /* Custom Animations */
+  --animate-fade-in: fadeIn 0.6s ease-out forwards;
+  --animate-slide-up: slideUp 0.6s ease-out forwards;
+  --animate-slide-up-delayed: slideUp 0.6s ease-out 0.2s forwards;
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+}
+
+/* Configure Dark Mode manually (replaces darkMode: 'class' in JS config) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl;
+  }
+}
+
+/* Base styles using @apply now work correctly after the import */
+@layer base {
+  body {
+    @apply antialiased text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-950;
+  }
+}

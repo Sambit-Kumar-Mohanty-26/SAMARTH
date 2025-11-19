@@ -1,4 +1,3 @@
-// src/components/InteractiveMap.tsx
 import { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import type { District } from "../types";
@@ -9,11 +8,11 @@ type Props = {
 };
 
 function getColor(hps: number) {
-  if (hps >= 80) return "#16a34a"; // Green
+  if (hps >= 80) return "#16a34a";
   if (hps >= 70) return "#4ade80";
-  if (hps >= 60) return "#facc15"; // Yellow
-  if (hps >= 50) return "#fb923c"; // Orange
-  return "#ef4444"; // Red
+  if (hps >= 60) return "#facc15";
+  if (hps >= 50) return "#fb923c";
+  return "#ef4444";
 }
 
 export default function InteractiveMap({ districts = [], onDistrictClick }: Props) {

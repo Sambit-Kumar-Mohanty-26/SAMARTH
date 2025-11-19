@@ -29,7 +29,6 @@ export default function MonthlyTrendChart({ data, loading }: Props) {
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Monthly Performance Trends
       </h3>
-      {/* This explicit height container fixes the recharts warning */}
       <div style={{ width: "100%", height: 300 }}>
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>

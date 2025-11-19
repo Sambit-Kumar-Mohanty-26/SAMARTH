@@ -1,29 +1,16 @@
-// functions/src/index.ts
-
 import { onObjectFinalized, StorageEvent } from "firebase-functions/v2/storage";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 import { setGlobalOptions } from "firebase-functions/v2";
-
-// Import file parsing libraries
 import * as ExcelJS from "exceljs";
 import Papa from "papaparse";
 
-// Initialize the Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
-
-// Set global options for all functions in this file (e.g., region)
 setGlobalOptions({ region: "asia-south1" });
 
-/**
- * FUNCTION 1: Process Uploaded Reports (ENHANCED)
- * Triggered when a file is uploaded.
- * Reads the file, transforms the data, and intelligently UPDATES existing district
- * documents to preserve fields like geometry_json.
- */
 export const processGoodWorkReport = onObjectFinalized(
-  { bucket: "project-samarth-c443f.firebasestorage.app" }, // Using the default bucket
+  { bucket: "project-samarth-c443f.firebasestorage.app" }, 
   async (event: StorageEvent) => {
     const fileBucket = event.data.bucket;
     const filePath = event.data.name;
@@ -65,7 +52,6 @@ export const processGoodWorkReport = onObjectFinalized(
           extractedData = result.data;
       } else {
         console.log(`Unsupported file type for: ${filePath}`);
-        // Moving unsupported files to processed to avoid re-triggering.
         const destination = `processed_reports/unsupported_${filePath.split("/").pop()}`;
         await bucket.file(filePath).move(destination);
         return;
@@ -79,7 +65,6 @@ export const processGoodWorkReport = onObjectFinalized(
         return;
       }
 
-      // --- NEW, SMARTER UPDATE LOGIC ---
       console.log("Fetching existing districts to preserve geometry data...");
       const districtsRef = db.collection("districts");
       const snapshot = await districtsRef.get();
@@ -113,11 +98,8 @@ export const processGoodWorkReport = onObjectFinalized(
         };
 
         if (existingDistricts.has(docId)) {
-          // If the district exists, UPDATE it with new stats.
-          // This will not touch other fields like geometry_json.
           batch.update(docRef, newStatsData);
         } else {
-          // If the district is new, CREATE it with the stats.
           batch.set(docRef, newStatsData);
         }
       }
@@ -138,10 +120,6 @@ export const processGoodWorkReport = onObjectFinalized(
   }
 );
 
-/**
- * FUNCTION 2: Generate AI Insights
- * Runs every day at 1:00 AM.
- */
 export const generateAIInsights = onSchedule("every day 01:00", async () => {
   console.log("Starting daily AI Insights generation...");
 
@@ -181,11 +159,6 @@ export const generateAIInsights = onSchedule("every day 01:00", async () => {
   console.log("Successfully generated and saved new AI insights.");
 });
 
-
-/**
- * FUNCTION 3: Aggregate Monthly Historical Data
- * Runs on the 1st day of every month at 2:00 AM.
- */
 export const aggregateMonthlyStats = onSchedule("0 2 1 * *", async () => {
   console.log("Starting monthly historical data aggregation...");
 

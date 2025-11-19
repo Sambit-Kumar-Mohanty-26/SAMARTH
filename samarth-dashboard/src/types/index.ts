@@ -1,3 +1,4 @@
+// src/types/index.ts
 export interface District {
   id: string;
   district_name: string;
@@ -6,19 +7,24 @@ export interface District {
   officer_count?: number;
   cases_solved?: number;
   recognitions?: number;
+  // Added missing metrics so you don't have to replace them
+  conviction_ratio?: number;
+  nbws_executed?: number;
+  drug_seizure_kg?: number;
 }
 
 export interface Officer {
   id: string;
   name: string;
   rank: string;
-  district: string;
+  district: string; // Matches your fix (was district_id)
   badge_number?: string;
   hps_score?: number;
   cases_solved?: number;
   recognitions?: number;
   join_date?: string;
   performance_trend?: number[]; 
+  designation?: string; // Added optional designation to prevent errors if used
 }
 
 export interface Summary {
@@ -51,10 +57,9 @@ export interface Feedback {
   status?: 'pending' | 'reviewed' | 'resolved';
 }
 
-// --- ADDED FOR TREND ANALYSIS ---
 export interface HistoricalDataPoint {
-  id: string; // e.g., "2024-10"
-  month: string; // e.g., "Oct"
+  id: string;
+  month: string;
   convictionRatio: number;
   nbwsExecuted: number;
   drugSeizure_kg: number;

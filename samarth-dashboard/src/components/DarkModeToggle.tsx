@@ -1,4 +1,3 @@
-// src/components/DarkModeToggle.tsx
 import { Moon, Sun } from "lucide-react";
 import { useDarkModeStore } from "../stores/darkModeStore";
 

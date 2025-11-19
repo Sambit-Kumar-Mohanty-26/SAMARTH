@@ -1,5 +1,4 @@
-// src/components/AIInsights.tsx
-import { Brain, AlertTriangle, Target, Award } from "lucide-react";
+import { Brain, AlertTriangle, Target, Award, Sparkles } from "lucide-react";
 import type { AIInsights as AIInsightsType } from "../types";
 
 type Props = {
@@ -8,118 +7,94 @@ type Props = {
 };
 
 export default function AIInsights({ aiInsights, loading }: Props) {
-  // Show a skeleton loader while data is loading for a better user experience
   if (loading || !aiInsights) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 min-h-[400px]">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
-          <div className="space-y-3">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-            <div className="flex gap-2">
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
-            </div>
-          </div>
-           <div className="space-y-3">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-            <div className="flex gap-2">
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
-            </div>
-          </div>
+      <div className="glass rounded-2xl p-8 min-h-[400px] animate-pulse">
+        <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mb-8"></div>
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => <div key={i} className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Insights</h2>
-        {aiInsights.generated_at && (
-          <span className="text-sm text-gray-500 dark:text-gray-400 ml-auto">
-            Generated: {new Date(aiInsights.generated_at).toLocaleDateString()}
-          </span>
-        )}
+    <div className="glass rounded-2xl p-6 md:p-8 relative overflow-hidden border-t-4 border-purple-500">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+
+      <div className="flex items-center gap-3 mb-8 relative z-10">
+        <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
+          <Brain className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            AI Analysis <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+          </h2>
+          {aiInsights.generated_at && (
+            <span className="text-xs text-slate-500 font-mono">
+              Generated: {new Date(aiInsights.generated_at).toLocaleString()}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Natural Language Summary (PS-3 Requirement) */}
-      {aiInsights.naturalLanguageSummary && (
-        <div className="mb-6 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-          <p className="text-lg italic text-gray-800 dark:text-gray-200 text-center">
+      <div className="space-y-6 relative z-10">
+        {aiInsights.naturalLanguageSummary && (
+          <div className=" from-slate-50 to-purple-50/50 dark:from-slate-800/50 dark:to-purple-900/20 p-6 rounded-xl border border-purple-100 dark:border-purple-800/50 italic text-slate-700 dark:text-slate-200 text-lg leading-relaxed">
             "{aiInsights.naturalLanguageSummary}"
-          </p>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Predictive Alert */}
-      {aiInsights.predictiveAlert && (
-        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+        {aiInsights.predictiveAlert && (
+          <div className="flex gap-4 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50">
+            <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-500 shrink-0" />
             <div>
-              <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">Predictive Alert</h3>
-              <p className="text-yellow-700 dark:text-yellow-300">{aiInsights.predictiveAlert}</p>
+              <h3 className="font-bold text-amber-800 dark:text-amber-200 mb-1">Strategic Alert</h3>
+              <p className="text-amber-700 dark:text-amber-300 text-sm">{aiInsights.predictiveAlert}</p>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Key Topics */}
-      {aiInsights.keyTopics && aiInsights.keyTopics.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Key Topics</h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {aiInsights.keyTopics.map((topic, idx) => (
-              <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
-                {topic}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          {aiInsights.keyTopics && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-500 uppercase tracking-wider">
+                <Target className="w-4 h-4" /> Focus Areas
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {aiInsights.keyTopics.map((topic, i) => (
+                  <span key={i} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-police-700 dark:text-police-300 shadow-sm">
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* Districts Requiring Attention (Corrected Formatting) */}
-      {aiInsights.risk_districts && aiInsights.risk_districts.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Districts Requiring Attention</h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {aiInsights.risk_districts.map((district, idx) => (
-              <span key={idx} className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-full text-sm font-medium">
-                {district}
-              </span>
-            ))}
-          </div>
+          {(aiInsights.top_performers || aiInsights.risk_districts) && (
+            <div className="space-y-4">
+              {aiInsights.top_performers && (
+                <div className="flex items-center gap-2 text-sm">
+                   <Award className="w-4 h-4 text-green-500" />
+                   <span className="font-medium">Top:</span>
+                   <div className="flex gap-2">
+                     {aiInsights.top_performers.map((d, i) => <span key={i} className="text-green-600 dark:text-green-400 font-bold">{d}</span>)}
+                   </div>
+                </div>
+              )}
+              {aiInsights.risk_districts && (
+                 <div className="flex items-center gap-2 text-sm">
+                   <AlertTriangle className="w-4 h-4 text-red-500" />
+                   <span className="font-medium">Attention:</span>
+                   <div className="flex gap-2">
+                     {aiInsights.risk_districts.map((d, i) => <span key={i} className="text-red-600 dark:text-red-400 font-bold">{d}</span>)}
+                   </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Top Performing Districts (Corrected Formatting) */}
-      {aiInsights.top_performers && aiInsights.top_performers.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Award className="w-5 h-5 text-green-600 dark:text-green-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Performing Districts</h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {aiInsights.top_performers.map((performer, idx) => (
-              <span key={idx} className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-sm font-medium">
-                {performer}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

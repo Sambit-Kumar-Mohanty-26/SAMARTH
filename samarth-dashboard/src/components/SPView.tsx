@@ -1,134 +1,324 @@
 // src/components/SPView.tsx
-import { useRef, useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Trophy, Award, Download } from "lucide-react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { useMemo } from "react";
+import { X, Phone, Mail, Award, AlertTriangle, TrendingUp, Users, CheckCircle, Star, FileText, FileSpreadsheet, Download } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable"; // Ensure jspdf-autotable is installed
+import * as ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Legend
+} from "recharts";
 import type { District, Officer } from "../types";
 
 type Props = {
-  district: District;
+  district: District | null;
+  districtName: string;
   officers: Officer[];
   onClose: () => void;
 };
 
-export default function SPView({ district, officers, onClose }: Props) {
-  const pdfRef = useRef<HTMLDivElement>(null);
+export default function SPView({ district, districtName, officers, onClose }: Props) {
+  // 1. Data Safety
+  const safeDistrict = district || {
+    id: "unknown",
+    district_name: districtName,
+    zone: "Unassigned",
+    hps_score: 0,
+    conviction_ratio: 0,
+    nbws_executed: 0,
+    drug_seizure_kg: 0,
+    cases_solved: 0,
+    recognitions: 0,
+    officer_count: 0
+  };
 
-  const districtOfficers = useMemo(() => {
-    return officers.filter(
-      (o) =>
-        o.district &&
-        o.district.trim().toLowerCase() === district.district_name.trim().toLowerCase()
-    );
-  }, [officers, district]);
-
-  const sortedOfficers = useMemo(() => {
-    return [...districtOfficers].sort((a, b) => (b.hps_score ?? 0) - (a.hps_score ?? 0));
-  }, [districtOfficers]);
-
-  const trendData = useMemo(() => {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-    const baseCases = district.cases_solved ?? 50;
-    const baseHps = district.hps_score ?? 60;
-    return months.map((month, idx) => ({
-      month,
-      "Cases Solved": Math.floor(baseCases * (0.7 + Math.random() * 0.4)),
-      "HPS Trend": parseFloat(Math.max(0, Math.min(100, baseHps + (idx - 3) * 5 + (Math.random() * 10 - 5))).toFixed(1)),
-    }));
-  }, [district]);
-
-  const totalCases = district.cases_solved ?? 0;
-  const totalRecognitions = district.recognitions ?? 0;
+  // 2. Metrics Calculation
+  const districtOfficers = officers.filter(o => o.district === safeDistrict.id);
+  const sp = districtOfficers.find(o => o.rank === "SP" || o.designation === "SP") || districtOfficers[0];
+  
   const avgOfficerHps = useMemo(() => {
     if (districtOfficers.length === 0) return 0;
-    const sum = districtOfficers.reduce((s, o) => s + (o.hps_score ?? 0), 0);
-    return sum / districtOfficers.length;
+    const total = districtOfficers.reduce((acc, curr) => acc + (curr.hps_score || 0), 0);
+    return (total / districtOfficers.length).toFixed(1);
   }, [districtOfficers]);
 
-  const handleExportPDF = async () => {
-    const elementToCapture = pdfRef.current;
-    if (!elementToCapture) return;
-    try {
-      const buttons = elementToCapture.querySelector('.pdf-hide-buttons');
-      if (buttons) (buttons as HTMLElement).style.display = 'none';
-      const canvas = await html2canvas(elementToCapture, { scale: 2, useCORS: true, logging: false });
-      if (buttons) (buttons as HTMLElement).style.display = 'flex';
-      
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      pdf.setFontSize(18);
-      pdf.text(`Performance Report: ${district.district_name}`, 15, 20);
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, 'PNG', 0, 30, pdfWidth, pdfHeight);
-      pdf.save(`${district.district_name}_Report.pdf`);
-    } catch (error) { console.error("Error generating PDF:", error); }
+  // Trend Data
+  const trendData = useMemo(() => {
+    return [
+      { month: 'Jan', score: Math.max(0, (safeDistrict.hps_score || 50) - 12) },
+      { month: 'Feb', score: Math.max(0, (safeDistrict.hps_score || 50) - 5) },
+      { month: 'Mar', score: Math.max(0, (safeDistrict.hps_score || 50) - 8) },
+      { month: 'Apr', score: Math.max(0, (safeDistrict.hps_score || 50) + 4) },
+      { month: 'May', score: Math.max(0, (safeDistrict.hps_score || 50) - 2) },
+      { month: 'Jun', score: safeDistrict.hps_score || 50 },
+    ];
+  }, [safeDistrict]);
+
+  const comparisonData = [
+    { name: 'HPS', value: safeDistrict.hps_score || 0, stateAvg: 65 },
+    { name: 'Conviction', value: safeDistrict.conviction_ratio || 0, stateAvg: 45 },
+    { name: 'Solved', value: (safeDistrict.cases_solved || 0) / 5, stateAvg: 40 },
+    { name: 'NBW', value: (safeDistrict.nbws_executed || 0) / 2, stateAvg: 55 },
+  ];
+
+  // 3. PDF Generator (Updated with Project Name)
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(30, 58, 138); // Navy Blue
+    doc.rect(0, 0, 210, 40, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Project SAMARTH", 105, 20, { align: "center" });
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(`District Performance Report: ${safeDistrict.district_name}`, 105, 30, { align: "center" });
+
+    // SP Info
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.text(`Superintendent: ${sp?.name || "Vacant"}`, 14, 50);
+    doc.text(`Zone: ${safeDistrict.zone}`, 14, 56);
+
+    // Metrics Table
+    const metricsData = [
+      ["HPS Score", safeDistrict.hps_score?.toFixed(1) || "N/A"],
+      ["Conviction Ratio", `${safeDistrict.conviction_ratio}%`],
+      ["NBWs Executed", `${safeDistrict.nbws_executed}`],
+      ["Drug Seizure", `${safeDistrict.drug_seizure_kg} kg`],
+      ["Cases Solved", `${safeDistrict.cases_solved}`],
+      ["Recognitions", `${safeDistrict.recognitions}`],
+      ["Officers Active", `${districtOfficers.length}`]
+    ];
+
+    autoTable(doc, {
+        startY: 65,
+        head: [['Metric', 'Value']],
+        body: metricsData,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 58, 138] },
+    });
+
+    doc.save(`${safeDistrict.district_name}_Report.pdf`);
+  };
+
+  // 4. Excel Generator
+  const handleDownloadExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('District Report');
+
+    worksheet.columns = [{ header: 'Metric', key: 'metric', width: 30 }, { header: 'Value', key: 'value', width: 20 }];
+    worksheet.addRow(['Project SAMARTH', 'District Data']);
+    worksheet.mergeCells('A1:B1');
+    worksheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
+    worksheet.getCell('A1').font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 14 };
+
+    worksheet.addRow(['District', safeDistrict.district_name]);
+    worksheet.addRow(['SP Name', sp?.name || 'Vacant']);
+    worksheet.addRow([]);
+    
+    worksheet.addRow(['HPS Score', safeDistrict.hps_score]);
+    worksheet.addRow(['Conviction Ratio', safeDistrict.conviction_ratio]);
+    worksheet.addRow(['Cases Solved', safeDistrict.cases_solved]);
+    
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `${safeDistrict.district_name}_Data.xlsx`);
   };
 
   return (
-    <div ref={pdfRef} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">SP View — {district.district_name}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Zone: {district.zone ?? "—"} • {districtOfficers.length} Officers</p>
-        </div>
-        <div className="flex gap-2 pdf-hide-buttons">
-          <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"><Download className="w-4 h-4" /> Export PDF</button>
-          <button onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Close</button>
-        </div>
-      </div>
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+      <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4"><p className="text-sm text-gray-500 dark:text-gray-400 mb-1">HPS Score</p><p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{(district.hps_score ?? 0).toFixed(1)}</p></div>
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4"><p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Cases Solved</p><p className="text-3xl font-bold text-green-600 dark:text-green-400">{totalCases}</p></div>
-        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4"><p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Recognitions</p><p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{totalRecognitions}</p></div>
-        <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4"><p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Avg Officer HPS</p><p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{avgOfficerHps.toFixed(1)}</p></div>
-      </div>
+      <div className="relative w-full max-w-5xl max-h-[95vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700 animate-slide-up">
+        
+        {/* 1. Header Section with Branding & Actions */}
+        <div className="relative h-36 bg-linear-to-r from-blue-600 to-purple-600 dark:from-blue-900 dark:to-purple-900 shrink-0">
+          
+          {/* Project Branding */}
+          <div className="absolute top-5 left-6 flex items-center gap-2 z-20">
+             <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-lg border border-white/10 shadow-lg">
+                <span className="text-xl">🚔</span>
+             </div>
+             <div>
+                <h3 className="text-[10px] font-bold text-blue-100 uppercase tracking-widest leading-tight">Project</h3>
+                <h1 className="text-xl font-black text-white leading-none tracking-wide shadow-sm">SAMARTH</h1>
+             </div>
+          </div>
 
-      <div className="mb-8">
-        <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Trend Analytics (Last 6 Months)</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 h-[300px]"><h4 className="text-lg font-medium mb-4 text-center text-gray-800 dark:text-gray-200">Operational Drives</h4><ResponsiveContainer width="100%" height="100%"><BarChart data={trendData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="month" /><YAxis /><Tooltip /><Legend /><Bar dataKey="Cases Solved" fill="#10b981" /></BarChart></ResponsiveContainer></div>
-          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 h-[300px]"><h4 className="text-lg font-medium mb-4 text-center text-gray-800 dark:text-gray-200">Overall Performance</h4><ResponsiveContainer width="100%" height="100%"><LineChart data={trendData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="month" /><YAxis domain={[0, 100]} /><Tooltip /><Legend /><Line type="monotone" dataKey="HPS Trend" stroke="#3b82f6" /></LineChart></ResponsiveContainer></div>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Officer Spotlight (Top 3)</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {sortedOfficers.slice(0, 3).map((officer) => {
-            // --- 👇 THIS IS THE FIX 👇 ---
-            // The variables are now defined inside the map loop.
-            const hasBadge = (officer.hps_score ?? 0) >= 70;
-            const isTop = (officer.hps_score ?? 0) >= 80;
-
-            return (
-              <div key={officer.id} className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-100">{officer.name}</h4>
-                  {hasBadge && (
-                    <span title="High Performer">
-                      <Award className="w-5 h-5 text-yellow-500" />
-                    </span>
-                  )}
-                  {isTop && (
-                    <span title="Top Performer">
-                      <Trophy className="w-5 h-5 text-blue-500" />
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{officer.rank}</p>
-                <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-gray-500">HPS:</span><span className="ml-2 font-bold text-gray-900 dark:text-gray-100">{(officer.hps_score ?? 0).toFixed(1)}</span></div>
-                  <div><span className="text-gray-500">Cases:</span><span className="ml-2 font-bold text-gray-900 dark:text-gray-100">{officer.cases_solved ?? 0}</span></div>
-                </div>
+          {/* Header Actions (Icons) */}
+          <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+            <button onClick={handleDownloadPDF} className="group flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-all text-xs font-bold uppercase tracking-wide shadow-sm">
+              <FileText size={14} /> <span className="hidden sm:inline">PDF</span>
+            </button>
+            <button onClick={handleDownloadExcel} className="group flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-all text-xs font-bold uppercase tracking-wide shadow-sm">
+              <FileSpreadsheet size={14} /> <span className="hidden sm:inline">Excel</span>
+            </button>
+            <div className="h-6 w-px bg-white/20 mx-1"></div>
+            <button onClick={onClose} className="p-2 bg-black/20 hover:bg-red-500/80 text-white rounded-full transition-colors shadow-sm">
+              <X size={18} />
+            </button>
+          </div>
+          
+          {/* District Info */}
+          <div className="absolute -bottom-12 left-8 flex items-end gap-6 z-10">
+            <div className="w-28 h-28 rounded-full border-4 border-white dark:border-slate-900 bg-slate-200 overflow-hidden shadow-lg">
+              <img 
+                src={`https://ui-avatars.com/api/?name=${sp?.name || safeDistrict.district_name}&background=0D8ABC&color=fff`} 
+                alt="SP Avatar"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="mb-4 ml-1">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white drop-shadow-sm sm:text-white sm:drop-shadow-md">
+                {safeDistrict.district_name}
+              </h2>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/90 text-blue-800 shadow-sm backdrop-blur-sm border border-blue-100">
+                  Zone: {safeDistrict.zone}
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/90 text-purple-800 shadow-sm backdrop-blur-sm border border-purple-100">
+                  {districtOfficers.length} Officers
+                </span>
               </div>
-            );
-          })}
-          {sortedOfficers.length === 0 && <div className="text-center py-8 text-gray-500 col-span-3">No officer data found for this district.</div>}
+            </div>
+          </div>
         </div>
+
+        {/* 2. Scrollable Body */}
+        <div className="flex-1 overflow-y-auto pt-16 pb-6 px-6 sm:px-8 custom-scrollbar">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <StatCard icon={Award} label="HPS Score" value={safeDistrict.hps_score?.toFixed(1)} color="text-blue-600" />
+            <StatCard icon={CheckCircle} label="Cases Solved" value={safeDistrict.cases_solved} color="text-green-600" />
+            <StatCard icon={Star} label="Recognitions" value={safeDistrict.recognitions} color="text-amber-500" />
+            <StatCard icon={Users} label="Avg Officer HPS" value={avgOfficerHps} color="text-purple-600" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              {/* Trend Chart */}
+              <section className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <TrendingUp className="text-blue-500" size={20} /> Trend Analytics
+                  </h3>
+                  <div className="text-xs text-slate-400 font-medium px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">6 Months</div>
+                </div>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trendData}>
+                      <defs>
+                        <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.4} />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
+                      <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', border: 'none' }} />
+                      <Area type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#trendGradient)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              {/* Comparison Chart */}
+              <section className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Performance vs State Average</h3>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={comparisonData} barGap={8}>
+                      <defs>
+                        <linearGradient id="barGradient1" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="100%" stopColor="#2563eb" />
+                        </linearGradient>
+                        <linearGradient id="barGradient2" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#cbd5e1" />
+                          <stop offset="100%" stopColor="#94a3b8" />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.4} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#94a3b8'}} />
+                      <Tooltip cursor={{fill: 'transparent'}} />
+                      <Legend iconType="circle" />
+                      <Bar dataKey="value" name="District" fill="url(#barGradient1)" radius={[6, 6, 0, 0]} barSize={24} />
+                      <Bar dataKey="stateAvg" name="State Avg" fill="url(#barGradient2)" radius={[6, 6, 0, 0]} barSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            </div>
+
+            <div className="space-y-6">
+              <section className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Superintendent Details</h3>
+                <div className="space-y-4">
+                  <div className="group">
+                    <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">Name</div>
+                    <div className="font-semibold text-slate-900 dark:text-white text-lg">{sp?.name || "Vacant"}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">Contact</div>
+                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium"><Phone size={16} className="text-blue-500" /> <span>+91 {Math.floor(Math.random() * 9000000000) + 1000000000}</span></div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">Email</div>
+                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium text-sm break-all"><Mail size={16} className="text-blue-500" /> <span>sp.{safeDistrict.district_name.toLowerCase().replace(/\s+/g, '')}@odishapolice.gov.in</span></div>
+                  </div>
+                </div>
+              </section>
+              <section className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-xl p-5">
+                 <div className="flex gap-3">
+                   <AlertTriangle className="text-red-600 dark:text-red-400 shrink-0 mt-1" size={20} />
+                   <div>
+                     <h3 className="font-bold text-red-800 dark:text-red-200">Active Alerts</h3>
+                     <ul className="mt-3 text-sm text-red-700 dark:text-red-300 space-y-2 list-disc pl-4">
+                        {(safeDistrict.conviction_ratio ?? 0) < 40 && <li><strong>Critical:</strong> Conviction rate ({safeDistrict.conviction_ratio}%) is below threshold.</li>}
+                        {(safeDistrict.nbws_executed ?? 0) < 5 && <li>Low NBW execution rate detected.</li>}
+                        <li>Pending case volume exceeds zone average by 12%.</li>
+                     </ul>
+                   </div>
+                 </div>
+               </section>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer (Restored & Explicitly Visible) */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3 shrink-0">
+           <button 
+            onClick={onClose} 
+            className="px-6 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium shadow-sm transition-colors"
+          >
+            Close
+          </button>
+          <button 
+            onClick={handleDownloadPDF}
+            className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30 transition-all font-medium flex items-center gap-2"
+          >
+            <Download size={18} />
+            Download Report PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, color }: { icon: any, label: string, value: any, color: string }) {
+  return (
+    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4 hover:scale-[1.02] transition-transform">
+      <div className={`p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50 ${color}`}><Icon size={24} /></div>
+      <div>
+        <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</div>
+        <div className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">{value ?? "—"}</div>
       </div>
     </div>
   );

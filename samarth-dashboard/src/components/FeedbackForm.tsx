@@ -1,4 +1,3 @@
-// src/components/FeedbackForm.tsx
 import React, { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -34,15 +33,13 @@ export default function FeedbackForm() {
     try {
       const now = new Date();
       await addDoc(collection(db, "feedback"), {
-        // New structure (for future use)
         district: formData.district || undefined,
         officer_name: formData.officer_name || undefined,
         feedback_type: formData.feedback_type,
         message: formData.message,
-        rating: formData.rating.toString(), // Save as string to match existing format
+        rating: formData.rating.toString(), 
         submitted_at: now.toISOString(),
         status: "pending",
-        // Legacy structure (for backward compatibility with existing documents)
         feedback_text: formData.message,
         date: now.toLocaleString("en-IN", {
           day: "numeric",
@@ -56,7 +53,6 @@ export default function FeedbackForm() {
       });
 
       setSubmitted(true);
-      // Reset form
       setFormData({
         district: "",
         officer_name: "",
@@ -64,8 +60,6 @@ export default function FeedbackForm() {
         message: "",
         rating: 5,
       });
-
-      // Reset success message after 5 seconds
       setTimeout(() => {
         setSubmitted(false);
       }, 5000);
