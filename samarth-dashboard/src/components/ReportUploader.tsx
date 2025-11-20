@@ -1,23 +1,20 @@
 import { useState } from "react";
 import { doc, writeBatch, collection, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig"; 
-import { UploadCloud, File as FileIcon, Loader, CheckCircle, AlertTriangle } from "lucide-react";
+import { UploadCloud, File as FileIcon, Loader, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
 import * as ExcelJS from "exceljs";
 import Papa from "papaparse";
 
 export default function ReportUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
-  const [message, setMessage] = useState("Upload a CSV or Excel report to process locally.");
+  const [message, setMessage] = useState("Select report month and upload file.");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      const allowedTypes = [
-        "text/csv",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.ms-excel"
-      ];
+      const allowedTypes = ["text/csv", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"];
       
       const isCsv = selectedFile.name.endsWith(".csv");
       
@@ -78,7 +75,33 @@ export default function ReportUploader() {
 
       if (extractedData.length === 0) throw new Error("No data found in file.");
 
-      setMessage(`Updating Database with ${extractedData.length} records...`);
+      setMessage(`Calculating totals for ${selectedMonth}...`);
+      
+      let totalNbws = 0;
+      let totalDrug = 0;
+      let totalConviction = 0;
+      let count = 0;
+
+      extractedData.forEach(row => {
+        totalNbws += Number(row["nbws_executed"] || 0);
+        totalDrug += Number(row["drug_seizure_kg"] || 0);
+        totalConviction += Number(row["conviction_ratio"] || 0);
+        count++;
+      });
+
+      const avgConviction = count > 0 ? Number((totalConviction / count).toFixed(1)) : 0;
+      const monthLabel = new Date(selectedMonth + "-01").toLocaleString('default', { month: 'short' });
+
+      await setDoc(doc(db, "historical_data", selectedMonth), {
+        id: selectedMonth, 
+        month: monthLabel, 
+        convictionRatio: avgConviction,
+        nbwsExecuted: totalNbws,
+        drugSeizure_kg: totalDrug,
+        timestamp: new Date().toISOString()
+      });
+
+      setMessage(`Updating District Records...`);
       const chunkSize = 450; 
       for (let i = 0; i < extractedData.length; i += chunkSize) {
         const batch = writeBatch(db);
@@ -109,15 +132,14 @@ export default function ReportUploader() {
         await batch.commit();
       }
 
-      setMessage("Recalculating State Summaries...");
       await updateSummaries();
 
       setStatus("success");
-      setMessage("Dashboard updated successfully!");
+      setMessage(`Success! Data for ${monthLabel} has been saved to history.`);
       
       setTimeout(() => {
         setStatus("idle");
-        setMessage("Upload another report");
+        setMessage("Upload another month's report");
         setFile(null);
       }, 5000);
 
@@ -129,7 +151,7 @@ export default function ReportUploader() {
   };
 
   const updateSummaries = async () => {
-    const snapshot = await getDocs(collection(db, "districts"));
+     const snapshot = await getDocs(collection(db, "districts"));
     const districts = snapshot.docs.map(doc => doc.data());
 
     let totalNbws = 0;
@@ -145,7 +167,6 @@ export default function ReportUploader() {
     });
 
     const avgConviction = districts.length ? (totalConviction / districts.length).toFixed(1) : 0;
-
 
     await setDoc(doc(db, "summary", "live_stats"), {
       statewideConvictionRatio: Number(avgConviction),
@@ -177,34 +198,45 @@ export default function ReportUploader() {
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 max-w-2xl mx-auto border border-gray-200 dark:border-gray-700">
       <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
         <UploadCloud className="inline-block w-6 h-6 mr-2 text-blue-500" />
-        Live Data Update
+        Upload Monthly Report
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        Process data locally without server costs. Upload a CSV/Excel file to update the dashboard instantly.
+        Select the month for this data to build the historical trend chart.
       </p>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <label className="flex-1 block w-full">
-          <span className="sr-only">Choose file</span>
-          <input
-            type="file"
-            onChange={handleFileChange}
-            accept=".csv, .xlsx, .xls"
-            className="block w-full text-sm text-gray-500 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/50 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800/50 cursor-pointer"
-          />
-        </label>
-        <button
-          onClick={processData}
-          disabled={!file || status === "processing"}
-          className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors duration-200"
-        >
-          {status === "processing" ? (
-            <Loader className="animate-spin w-5 h-5" />
-          ) : (
-            <UploadCloud className="w-5 h-5" />
-          )}
-          {status === 'processing' ? 'Processing...' : 'Update Dashboard'}
-        </button>
+      <div className="space-y-4">
+        <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Report Month</label>
+            <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md">
+                <Calendar className="text-gray-500" size={18} />
+                <input 
+                    type="month" 
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="bg-transparent w-full text-sm font-medium text-gray-900 dark:text-white focus:outline-none"
+                />
+            </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+            <label className="flex-1 block w-full">
+            <span className="sr-only">Choose file</span>
+            <input
+                type="file"
+                onChange={handleFileChange}
+                accept=".csv, .xlsx, .xls"
+                className="block w-full text-sm text-gray-500 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/50 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800/50 cursor-pointer"
+            />
+            </label>
+            <button
+            onClick={processData}
+            disabled={!file || status === "processing"}
+            className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors duration-200"
+            >
+            {status === "processing" ? <Loader className="animate-spin w-5 h-5" /> : <UploadCloud className="w-5 h-5" />}
+            {status === 'processing' ? 'Processing...' : 'Upload'}
+            </button>
+        </div>
       </div>
       
       <div className="mt-4 text-sm text-center h-5">
